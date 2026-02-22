@@ -36,9 +36,32 @@ interface itemType {
 
 const ItemBox = ({ spendOn, price }: itemType) => {
   return (
-    <View>
-      <Text>{spendOn}</Text>
-      <Text>{price}</Text>
+    <View
+      style={{
+        flex: 1,
+        flexDirection: "row",
+        justifyContent: "space-around",
+        margin: 5,
+        padding: 5,
+        backgroundColor: "#6C7C87",
+      }}
+    >
+      <Text
+        style={{
+          color: "#F1F2F3",
+          fontSize: 18,
+        }}
+      >
+        {spendOn}
+      </Text>
+      <Text
+        style={{
+          color: "#F1F2F3",
+          fontSize: 18,
+        }}
+      >
+        {price}
+      </Text>
     </View>
   );
 };
