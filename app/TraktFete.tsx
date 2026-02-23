@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { FlatList, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
@@ -66,10 +67,22 @@ const ItemBox = ({ spendOn, price }: itemType) => {
   );
 };
 
-export default function Index() {
+export default function TraktFete() {
+  const [limit, setLimit] = useState<number>(0);
+  const [totalSpent, setTotalSpent] = useState<number>(0);
+
+  const spent = spendings.reduce((total, item) => {
+    return total + item.price;
+  }, 0);
+
   return (
     <SafeAreaProvider>
       <SafeAreaView>
+        <View>
+          <Text>WEEKLY LIMIT: {limit}</Text>
+          <Text>CASH: 245</Text>
+          <Text>TOTAL SPENDING: {spent}</Text>
+        </View>
         <FlatList
           data={spendings}
           renderItem={({ item }) => <ItemBox {...item} />}
