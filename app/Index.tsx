@@ -1,4 +1,6 @@
-import { Pressable, Text, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
+import { FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 const spendings = [
@@ -29,7 +31,30 @@ const spendings = [
   },
 ];
 
+type Spending = {
+  itemId: string;
+  itemName: string;
+  itemPrice: number;
+};
+
 export default function Index() {
+  const [spent, setSpent] = useState<number>(0);
+  const [spendingList, setSpendingList] = useState<Spending[]>([]);
+
+  const getData = async () => {
+    const data = await AsyncStorage.getItem("spend-history");
+    return data != null ? JSON.parse(data) : null;
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      const data = await getData();
+      setSpendingList(data);
+    };
+
+    loadData();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <SafeAreaView
@@ -49,7 +74,7 @@ export default function Index() {
               color: "#FFFFFF",
             }}
           >
-            Spending Limit
+            Spending Limit: 500
           </Text>
           <Text
             style={{
@@ -69,12 +94,50 @@ export default function Index() {
             Total Spent: ₱240
           </Text>
         </View>
-        <Pressable
-          onPress={() => console.log("123")}
-          style={{ backgroundColor: "#FFFFFF" }}
+        <View
+          style={{
+            marginTop: 50,
+            marginBottom: 50,
+            gap: 15,
+          }}
         >
-          <Text selectable={false}>Update Balance</Text>
-        </Pressable>
+          <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "600" }}>
+            Add Item:
+          </Text>
+          <Text style={{ color: "#FFFFFF", fontSize: 16 }}>Item Name</Text>
+          <TextInput
+            placeholder="Enter Item Name"
+            style={{ backgroundColor: "#FFFFFF" }}
+          />
+          <Text style={{ color: "#FFFFFF", fontSize: 16 }}>Item Price</Text>
+          <TextInput
+            placeholder="Enter Item Price"
+            style={{ backgroundColor: "#FFFFFF" }}
+          />
+          <Pressable
+            onPress={() => console.log("123")}
+            style={{
+              backgroundColor: "#FFFFFF",
+              alignSelf: "flex-start",
+              padding: 5,
+            }}
+          >
+            <Text selectable={false}>Add</Text>
+          </Pressable>
+        </View>
+        <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "600" }}>
+          History:
+        </Text>
+        {spendingList && (
+          <FlatList
+            data={spendingList}
+            renderItem={({ item }: { item: Spending }) => (
+              <Text>
+                {item.itemName} = {item.itemPrice}
+              </Text>
+            )}
+          />
+        )}
       </SafeAreaView>
     </SafeAreaProvider>
   );
