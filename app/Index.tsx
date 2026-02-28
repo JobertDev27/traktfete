@@ -1,35 +1,8 @@
 import { createAsyncStorage } from "@react-native-async-storage/async-storage";
+import * as Crypto from "expo-crypto";
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-
-const spendings = [
-  {
-    id: 1,
-    spendOn: "water",
-    price: 15,
-  },
-  {
-    id: 2,
-    spendOn: "fishball",
-    price: 25,
-  },
-  {
-    id: 3,
-    spendOn: "siomai rice",
-    price: 35,
-  },
-  {
-    id: 4,
-    spendOn: "beef tafa",
-    price: 50,
-  },
-  {
-    id: 5,
-    spendOn: "gas",
-    price: 100,
-  },
-];
 
 type Spending = {
   itemId: string;
@@ -140,7 +113,7 @@ export default function Index() {
               if (itemName == "" || itemPrice == "") return;
 
               const newItem = {
-                itemId: crypto.randomUUID(),
+                itemId: Crypto.randomUUID(),
                 itemName: itemName,
                 itemPrice: Number(itemPrice),
               };
