@@ -57,10 +57,12 @@ export default function Index() {
       const data = await getData();
       setSpendingList(data);
 
-      let totalSpent = 0;
-      data.foreach((item: Spending) => {
-        totalSpent += item.itemPrice;
-      });
+      if (!Array.isArray(data)) return;
+
+      const totalSpent = data.reduce((total: number, item: Spending) => {
+        return (total += item.itemPrice);
+      }, 0);
+
       setSpent(totalSpent);
     };
 
