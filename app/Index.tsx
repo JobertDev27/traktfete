@@ -41,6 +41,9 @@ export default function Index() {
   const [spent, setSpent] = useState<number>(0);
   const [spendingList, setSpendingList] = useState<Spending[]>([]);
 
+  const [itemName, setItemName] = useState<string>("");
+  const [itemPrice, setItemPrice] = useState<string>("");
+
   const storage = createAsyncStorage("trackerDB");
 
   const getData = async () => {
@@ -122,14 +125,28 @@ export default function Index() {
           <TextInput
             placeholder="Enter Item Name"
             style={{ backgroundColor: "#FFFFFF" }}
+            value={itemName}
+            onChangeText={(text) => setItemName(text)}
           />
           <Text style={{ color: "#FFFFFF", fontSize: 16 }}>Item Price</Text>
           <TextInput
             placeholder="Enter Item Price"
             style={{ backgroundColor: "#FFFFFF" }}
+            value={itemPrice}
+            onChangeText={(text) => setItemPrice(text)}
           />
           <Pressable
-            onPress={() => console.log("123")}
+            onPress={() => {
+              if (itemName == "" || itemPrice == "") return;
+
+              const newItem = {
+                itemId: crypto.randomUUID(),
+                itemName: itemName,
+                itemPrice: Number(itemPrice),
+              };
+
+              setSpendingList((spendingList) => [...spendingList, newItem]);
+            }}
             style={{
               backgroundColor: "#FFFFFF",
               alignSelf: "flex-start",
