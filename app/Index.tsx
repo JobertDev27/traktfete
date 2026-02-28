@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createAsyncStorage } from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -41,15 +41,27 @@ export default function Index() {
   const [spent, setSpent] = useState<number>(0);
   const [spendingList, setSpendingList] = useState<Spending[]>([]);
 
+  const storage = createAsyncStorage("trackerDB");
+
   const getData = async () => {
-    const data = await AsyncStorage.getItem("spend-history");
-    return data != null ? JSON.parse(data) : null;
+    try {
+      const data = await storage.getItem("spend-history");
+      return data != null ? JSON.parse(data) : null;
+    } catch (err) {
+      return err;
+    }
   };
 
   useEffect(() => {
     const loadData = async () => {
       const data = await getData();
       setSpendingList(data);
+
+      let totalSpent = 0;
+      data.foreach((item: Spending) => {
+        totalSpent += item.itemPrice;
+      });
+      setSpent(totalSpent);
     };
 
     loadData();
@@ -91,7 +103,7 @@ export default function Index() {
               color: "#e0e0e0",
             }}
           >
-            Total Spent: ₱240
+            Total Spent: {spent}
           </Text>
         </View>
         <View
