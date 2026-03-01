@@ -1,4 +1,4 @@
-import { createAsyncStorage } from "@react-native-async-storage/async-storage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, Text, TextInput, View } from "react-native";
@@ -17,21 +17,40 @@ export default function Index() {
   const [itemName, setItemName] = useState<string>("");
   const [itemPrice, setItemPrice] = useState<string>("");
 
-  const storage = createAsyncStorage("trackerDB");
-
   const getData = async () => {
     try {
-      const data = await storage.getItem("spend-history");
+      const data = await AsyncStorage.getItem("spend-history");
       return data != null ? JSON.parse(data) : null;
     } catch (err) {
       return err;
     }
   };
 
+  const addItem = () => {
+    if (itemName == "" || itemPrice == "") return;
+
+    const newItem = {
+      itemId: Crypto.randomUUID(),
+      itemName: itemName,
+      itemPrice: Number(itemPrice),
+    };
+
+    setSpendingList((spendingList) => {
+      const list = spendingList ?? [];
+      const updatedList = [...list, newItem];
+
+      AsyncStorage.setItem("spend-history", JSON.stringify(updatedList));
+      setItemName("");
+      setItemPrice("");
+      return updatedList;
+    });
+  };
+
   useEffect(() => {
     const loadData = async () => {
       const data = await getData();
       setSpendingList(data);
+      console.log(`This is the spending list: ${JSON.stringify(data)}`);
 
       if (!Array.isArray(data)) return;
 
@@ -73,7 +92,7 @@ export default function Index() {
               fontWeight: "600",
             }}
           >
-            ₱500
+            ₱{500 - spent}
           </Text>
           <Text
             style={{
@@ -110,15 +129,7 @@ export default function Index() {
           />
           <Pressable
             onPress={() => {
-              if (itemName == "" || itemPrice == "") return;
-
-              const newItem = {
-                itemId: Crypto.randomUUID(),
-                itemName: itemName,
-                itemPrice: Number(itemPrice),
-              };
-
-              setSpendingList((spendingList) => [...spendingList, newItem]);
+              addItem();
             }}
             style={{
               backgroundColor: "#FFFFFF",
@@ -136,7 +147,7 @@ export default function Index() {
           <FlatList
             data={spendingList}
             renderItem={({ item }: { item: Spending }) => (
-              <Text>
+              <Text style={{ color: "#FFFFFF" }}>
                 {item.itemName} = {item.itemPrice}
               </Text>
             )}
