@@ -22,7 +22,6 @@ export default function Index() {
   const [itemName, setItemName] = useState<string>("");
   const [itemPrice, setItemPrice] = useState<string>("");
 
-  // Load data from AsyncStorage
   const getData = async () => {
     try {
       const data = await AsyncStorage.getItem("spend-history");
@@ -38,7 +37,6 @@ export default function Index() {
     setSpendingList(Array.isArray(data) ? data : []);
   };
 
-  // Add new spending
   const addItem = () => {
     if (!itemName.trim() || !itemPrice || isNaN(Number(itemPrice))) return;
 
@@ -53,12 +51,24 @@ export default function Index() {
     setSpendingList((prev) => [...prev, newItem]);
   };
 
-  // Load spending on mount
   useEffect(() => {
-    loadData();
+    const init = async () => {
+      const date = new Date();
+      if (date.getDay() === 1) {
+        try {
+          await AsyncStorage.removeItem("spend-history");
+          setSpendingList([]);
+          console.log("Cleared spend-history because today is Monday");
+        } catch (err) {
+          console.log("Failed to clear spend-history:", err);
+        }
+      }
+      await loadData();
+    };
+
+    init();
   }, []);
 
-  // Auto-save to AsyncStorage when spendingList changes
   useEffect(() => {
     const save = async () => {
       try {
@@ -79,14 +89,12 @@ export default function Index() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Spending Limit</Text>
           <Text style={styles.headerAmount}>₱{limit - spent}</Text>
           <Text style={styles.headerSpent}>Total Spent: ₱{spent}</Text>
         </View>
 
-        {/* Add Item Section */}
         <View style={styles.addItemContainer}>
           <Text style={styles.sectionTitle}>Add Item</Text>
 
@@ -114,7 +122,6 @@ export default function Index() {
           </Pressable>
         </View>
 
-        {/* History Section */}
         <Text style={styles.sectionTitle}>History</Text>
         <FlatList
           data={spendingList}
