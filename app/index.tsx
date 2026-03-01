@@ -1,7 +1,14 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
 import { useEffect, useState } from "react";
-import { FlatList, Pressable, Text, TextInput, View } from "react-native";
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 type Spending = {
@@ -11,149 +18,202 @@ type Spending = {
 };
 
 export default function Index() {
-  const [spent, setSpent] = useState<number>(0);
   const [spendingList, setSpendingList] = useState<Spending[]>([]);
-
   const [itemName, setItemName] = useState<string>("");
   const [itemPrice, setItemPrice] = useState<string>("");
 
+  // Load data from AsyncStorage
   const getData = async () => {
     try {
       const data = await AsyncStorage.getItem("spend-history");
-      return data != null ? JSON.parse(data) : null;
+      return data != null ? JSON.parse(data) : [];
     } catch (err) {
-      return err;
+      console.log(err);
+      return [];
     }
   };
 
-  const addItem = () => {
-    if (itemName == "" || itemPrice == "") return;
+  const loadData = async () => {
+    const data = await getData();
+    setSpendingList(Array.isArray(data) ? data : []);
+  };
 
-    const newItem = {
+  // Add new spending
+  const addItem = () => {
+    if (!itemName.trim() || !itemPrice || isNaN(Number(itemPrice))) return;
+
+    const newItem: Spending = {
       itemId: Crypto.randomUUID(),
-      itemName: itemName,
+      itemName: itemName.trim(),
       itemPrice: Number(itemPrice),
     };
 
-    setSpendingList((spendingList) => {
-      const list = spendingList ?? [];
-      const updatedList = [...list, newItem];
-
-      AsyncStorage.setItem("spend-history", JSON.stringify(updatedList));
-      setItemName("");
-      setItemPrice("");
-      return updatedList;
-    });
+    setItemName("");
+    setItemPrice("");
+    setSpendingList((prev) => [...prev, newItem]);
   };
 
+  // Load spending on mount
   useEffect(() => {
-    const loadData = async () => {
-      const data = await getData();
-      setSpendingList(data);
-      console.log(`This is the spending list: ${JSON.stringify(data)}`);
-
-      if (!Array.isArray(data)) return;
-
-      const totalSpent = data.reduce((total: number, item: Spending) => {
-        return (total += item.itemPrice);
-      }, 0);
-
-      setSpent(totalSpent);
-    };
-
     loadData();
   }, []);
 
+  // Auto-save to AsyncStorage when spendingList changes
+  useEffect(() => {
+    const save = async () => {
+      try {
+        await AsyncStorage.setItem(
+          "spend-history",
+          JSON.stringify(spendingList),
+        );
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    save();
+  }, [spendingList]);
+
+  const spent = spendingList.reduce((total, item) => total + item.itemPrice, 0);
+  const limit = 500;
+
   return (
     <SafeAreaProvider>
-      <SafeAreaView
-        style={{ backgroundColor: "#1d1d1d", padding: 25, flex: 1 }}
-      >
-        <View
-          style={{
-            backgroundColor: "#515151",
-            padding: 20,
-            boxSizing: "border-box",
-            borderRadius: 25,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 18,
-              color: "#FFFFFF",
-            }}
-          >
-            Spending Limit: 500
-          </Text>
-          <Text
-            style={{
-              fontSize: 48,
-              color: "#FFFFFF",
-              fontWeight: "600",
-            }}
-          >
-            ₱{500 - spent}
-          </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: "#e0e0e0",
-            }}
-          >
-            Total Spent: {spent}
-          </Text>
+      <SafeAreaView style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Spending Limit</Text>
+          <Text style={styles.headerAmount}>₱{limit - spent}</Text>
+          <Text style={styles.headerSpent}>Total Spent: ₱{spent}</Text>
         </View>
-        <View
-          style={{
-            marginTop: 50,
-            marginBottom: 50,
-            gap: 15,
-          }}
-        >
-          <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "600" }}>
-            Add Item:
-          </Text>
-          <Text style={{ color: "#FFFFFF", fontSize: 16 }}>Item Name</Text>
+
+        {/* Add Item Section */}
+        <View style={styles.addItemContainer}>
+          <Text style={styles.sectionTitle}>Add Item</Text>
+
+          <Text style={styles.label}>Item Name</Text>
           <TextInput
-            placeholder="Enter Item Name"
-            style={{ backgroundColor: "#FFFFFF" }}
+            style={styles.input}
+            placeholder="Enter item name"
             value={itemName}
-            onChangeText={(text) => setItemName(text)}
+            onChangeText={setItemName}
+            placeholderTextColor="#999"
           />
-          <Text style={{ color: "#FFFFFF", fontSize: 16 }}>Item Price</Text>
+
+          <Text style={styles.label}>Item Price</Text>
           <TextInput
-            placeholder="Enter Item Price"
-            style={{ backgroundColor: "#FFFFFF" }}
+            style={styles.input}
+            placeholder="Enter item price"
             value={itemPrice}
-            onChangeText={(text) => setItemPrice(text)}
+            onChangeText={setItemPrice}
+            keyboardType="numeric"
+            placeholderTextColor="#999"
           />
-          <Pressable
-            onPress={() => {
-              addItem();
-            }}
-            style={{
-              backgroundColor: "#FFFFFF",
-              alignSelf: "flex-start",
-              padding: 5,
-            }}
-          >
-            <Text selectable={false}>Add</Text>
+
+          <Pressable style={styles.addButton} onPress={addItem}>
+            <Text style={styles.addButtonText}>Add</Text>
           </Pressable>
         </View>
-        <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "600" }}>
-          History:
-        </Text>
-        {spendingList && (
-          <FlatList
-            data={spendingList}
-            renderItem={({ item }: { item: Spending }) => (
-              <Text style={{ color: "#FFFFFF" }}>
-                {item.itemName} = {item.itemPrice}
-              </Text>
-            )}
-          />
-        )}
+
+        {/* History Section */}
+        <Text style={styles.sectionTitle}>History</Text>
+        <FlatList
+          data={spendingList}
+          keyExtractor={(item) => item.itemId}
+          renderItem={({ item }) => (
+            <View style={styles.itemRow}>
+              <Text style={styles.itemName}>{item.itemName}</Text>
+              <Text style={styles.itemPrice}>₱{item.itemPrice}</Text>
+            </View>
+          )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No spendings yet</Text>
+          }
+        />
       </SafeAreaView>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#121212",
+    padding: 20,
+  },
+  header: {
+    backgroundColor: "#1E1E1E",
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 30,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 18,
+    color: "#FFFFFF",
+    marginBottom: 5,
+  },
+  headerAmount: {
+    fontSize: 48,
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  headerSpent: {
+    fontSize: 14,
+    color: "#AAAAAA",
+    marginTop: 5,
+  },
+  addItemContainer: {
+    marginBottom: 30,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 14,
+    color: "#CCCCCC",
+    marginBottom: 5,
+  },
+  input: {
+    backgroundColor: "#1E1E1E",
+    color: "#FFFFFF",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 15,
+  },
+  addButton: {
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+    width: 100,
+  },
+  addButtonText: {
+    color: "#121212",
+    fontWeight: "600",
+  },
+  itemRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#333",
+  },
+  itemName: {
+    color: "#FFFFFF",
+    fontSize: 16,
+  },
+  itemPrice: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  emptyText: {
+    color: "#888",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 20,
+  },
+});
