@@ -3,6 +3,7 @@ import * as Crypto from "expo-crypto";
 import { useEffect, useState } from "react";
 import {
   FlatList,
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -21,6 +22,7 @@ export default function Index() {
   const [spendingList, setSpendingList] = useState<Spending[]>([]);
   const [itemName, setItemName] = useState<string>("");
   const [itemPrice, setItemPrice] = useState<string>("");
+  const [editingLimit, setEditingLimit] = useState<boolean>(false);
 
   const getData = async () => {
     try {
@@ -83,6 +85,10 @@ export default function Index() {
     save();
   }, [spendingList]);
 
+  const handleEdit = () => {
+    setEditingLimit(!editingLimit);
+  };
+
   const spent = spendingList.reduce((total, item) => total + item.itemPrice, 0);
   const limit = 500;
 
@@ -93,6 +99,15 @@ export default function Index() {
           <Text style={styles.headerTitle}>Spending Limit</Text>
           <Text style={styles.headerAmount}>₱{limit - spent}</Text>
           <Text style={styles.headerSpent}>Total Spent: ₱{spent}</Text>
+          <Pressable onPress={handleEdit} style={styles.editCont}>
+            {!editingLimit && (
+              <Image
+                style={styles.editButton}
+                source={require("../assets/images/pencil.png")}
+              />
+            )}
+            {editingLimit && <Text style={styles.editButtonConf}>Confirm</Text>}
+          </Pressable>
         </View>
 
         <View style={styles.addItemContainer}>
@@ -222,5 +237,17 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     textAlign: "center",
     marginTop: 20,
+  },
+  editCont: {
+    position: "absolute",
+    top: 15,
+    right: 15,
+  },
+  editButton: {
+    height: 16,
+    width: 16,
+  },
+  editButtonConf: {
+    color: "#FFFFFF",
   },
 });
