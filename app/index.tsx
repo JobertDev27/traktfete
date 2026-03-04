@@ -23,6 +23,7 @@ export default function Index() {
   const [itemName, setItemName] = useState<string>("");
   const [itemPrice, setItemPrice] = useState<string>("");
   const [editingLimit, setEditingLimit] = useState<boolean>(false);
+  const [limit, setLimit] = useState<String>("0");
 
   const getData = async () => {
     try {
@@ -34,9 +35,22 @@ export default function Index() {
     }
   };
 
+  const getLimit = async () => {
+    try {
+      const userLimit = await AsyncStorage.getItem("spend-limit");
+      return userLimit;
+    } catch (err) {
+      console.log(err);
+      return null;
+    }
+  };
+
   const loadData = async () => {
-    const data = await getData();
-    setSpendingList(Array.isArray(data) ? data : []);
+    const dataRes = await getData();
+    const limitRes = (await getLimit()) ?? "500";
+
+    setSpendingList(Array.isArray(dataRes) ? dataRes : []);
+    setLimit(limitRes);
   };
 
   const addItem = () => {
@@ -90,14 +104,25 @@ export default function Index() {
   };
 
   const spent = spendingList.reduce((total, item) => total + item.itemPrice, 0);
-  const limit = 500;
 
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Spending Limit</Text>
-          <Text style={styles.headerAmount}>₱{limit - spent}</Text>
+          <Text style={styles.headerTitle}>
+            {editingLimit ? "Set New Limit" : "Spending Limit"}
+          </Text>
+          {editingLimit ? (
+            <TextInput
+              placeholder={"Enter New Limit"}
+              style={styles.headerAmountInput}
+              value={String(limit)}
+              onChangeText={setLimit}
+              keyboardType="numeric"
+            />
+          ) : (
+            <Text style={styles.headerAmount}>₱{Number(limit) - spent}</Text>
+          )}
           <Text style={styles.headerSpent}>Total Spent: ₱{spent}</Text>
           <Pressable onPress={handleEdit} style={styles.editCont}>
             {!editingLimit && (
@@ -178,6 +203,13 @@ const styles = StyleSheet.create({
     fontSize: 48,
     color: "#FFFFFF",
     fontWeight: "600",
+  },
+  headerAmountInput: {
+    fontSize: 48,
+    color: "#FFFFFF",
+    fontWeight: "600",
+    padding: 0,
+    margin: 0,
   },
   headerSpent: {
     fontSize: 14,
