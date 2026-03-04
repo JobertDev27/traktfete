@@ -38,7 +38,7 @@ export default function Index() {
   const getLimit = async () => {
     try {
       const userLimit = await AsyncStorage.getItem("spend-limit");
-      return userLimit;
+      return userLimit != null ? JSON.parse(userLimit) : "500";
     } catch (err) {
       console.log(err);
       return null;
@@ -99,8 +99,13 @@ export default function Index() {
     save();
   }, [spendingList]);
 
-  const handleEdit = () => {
-    setEditingLimit(!editingLimit);
+  const handleEdit = async () => {
+    const newState = !editingLimit;
+    setEditingLimit(newState);
+
+    if (!newState) {
+      await AsyncStorage.setItem("spend-limit", JSON.stringify(limit));
+    }
   };
 
   const spent = spendingList.reduce((total, item) => total + item.itemPrice, 0);
@@ -114,7 +119,6 @@ export default function Index() {
           </Text>
           {editingLimit ? (
             <TextInput
-              placeholder={"Enter New Limit"}
               style={styles.headerAmountInput}
               value={String(limit)}
               onChangeText={setLimit}
